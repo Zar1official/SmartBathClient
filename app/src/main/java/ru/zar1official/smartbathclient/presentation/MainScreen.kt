@@ -9,6 +9,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,6 +24,7 @@ import ru.zar1official.smartbathclient.ui.theme.DarkGreen
 
 @Composable
 fun MainScreen(viewModel: MainViewModel = getViewModel()) {
+    val coroutineScope = rememberCoroutineScope()
     val percentage = viewModel.percentage.observeAsState(initial = 0)
     val temperature = viewModel.temperature.observeAsState(initial = 0)
 

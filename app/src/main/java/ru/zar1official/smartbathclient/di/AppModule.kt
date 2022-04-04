@@ -9,7 +9,8 @@ val appModule = module {
         MainViewModel(
             increaseTemperatureUseCase = get(),
             decreaseTemperatureUseCase = get(),
-            readTemperatureUseCase = get()
+            readTemperatureUseCase = get(),
+            readBathStateUseCase = get()
         )
     }
 }

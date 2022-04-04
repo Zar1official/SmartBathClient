@@ -1,8 +1,12 @@
 package ru.zar1official.smartbathclient.data.repositories
 
+import ru.zar1official.smartbathclient.data.models.BathState
+import ru.zar1official.smartbathclient.data.network.Service
 import ru.zar1official.smartbathclient.domain.repository.Repository
 
-class RepositoryImpl : Repository {
+class RepositoryImpl(private val service: Service) : Repository {
+    override suspend fun readBathState(): BathState = service.readBathState(123)
+
     override suspend fun increaseTemperature() {
 
     }

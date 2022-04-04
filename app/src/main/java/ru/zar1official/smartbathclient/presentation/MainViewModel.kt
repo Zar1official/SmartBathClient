@@ -10,13 +10,15 @@ import kotlinx.coroutines.launch
 import ru.zar1official.smartbathclient.Constants
 import ru.zar1official.smartbathclient.domain.usecases.DecreaseTemperatureUseCase
 import ru.zar1official.smartbathclient.domain.usecases.IncreaseTemperatureUseCase
+import ru.zar1official.smartbathclient.domain.usecases.ReadBathStateUseCase
 import ru.zar1official.smartbathclient.domain.usecases.ReadTemperatureUseCase
 import ru.zar1official.smartbathclient.domain.usecases.result.PostRequestResult
 
 class MainViewModel(
     private val increaseTemperatureUseCase: IncreaseTemperatureUseCase,
     private val decreaseTemperatureUseCase: DecreaseTemperatureUseCase,
-    private val readTemperatureUseCase: ReadTemperatureUseCase
+    private val readTemperatureUseCase: ReadTemperatureUseCase,
+    private val readBathStateUseCase: ReadBathStateUseCase
 ) : ViewModel() {
     private val _percentage = MutableLiveData<Int>().apply { value = 0 }
     val percentage: LiveData<Int> = _percentage
@@ -77,6 +79,14 @@ class MainViewModel(
                 PostRequestResult.DataError -> {
 
                 }
+            }
+        }
+    }
+
+    fun onStartUpdatingBathState() {
+        viewModelScope.launch {
+            while (true) {
+                readBathStateUseCase.invoke()
             }
         }
     }

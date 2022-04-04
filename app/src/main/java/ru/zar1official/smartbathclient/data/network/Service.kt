@@ -1,15 +1,7 @@
 package ru.zar1official.smartbathclient.data.network
 
-import retrofit2.http.GET
-import retrofit2.http.POST
+import ru.zar1official.smartbathclient.data.models.BathState
 
 interface Service {
-    @POST
-    suspend fun increaseTemperature()
-
-    @POST
-    suspend fun decreaseTemperature()
-
-    @GET
-    suspend fun readTemperature()
+    suspend fun readBathState(uId: Int): BathState
 }
