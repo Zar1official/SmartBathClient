@@ -10,7 +10,10 @@ val appModule = module {
             increaseTemperatureUseCase = get(),
             decreaseTemperatureUseCase = get(),
             readTemperatureUseCase = get(),
-            readBathStateUseCase = get()
+            readBathStateUseCase = get(),
+            readUIdUseCase = get(),
+            startFetchingWaterUseCase = get(),
+            stopFetchingWaterUseCase = get()
         )
     }
 }

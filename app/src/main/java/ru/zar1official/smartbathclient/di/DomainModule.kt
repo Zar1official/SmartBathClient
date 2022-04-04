@@ -1,10 +1,7 @@
 package ru.zar1official.smartbathclient.di
 
 import org.koin.dsl.module
-import ru.zar1official.smartbathclient.domain.usecases.DecreaseTemperatureUseCase
-import ru.zar1official.smartbathclient.domain.usecases.IncreaseTemperatureUseCase
-import ru.zar1official.smartbathclient.domain.usecases.ReadBathStateUseCase
-import ru.zar1official.smartbathclient.domain.usecases.ReadTemperatureUseCase
+import ru.zar1official.smartbathclient.domain.usecases.*
 
 val domainModule = module {
     factory<DecreaseTemperatureUseCase> {
@@ -21,5 +18,17 @@ val domainModule = module {
 
     factory<ReadBathStateUseCase> {
         ReadBathStateUseCase(repository = get())
+    }
+
+    factory<ReadUIdUseCase> {
+        ReadUIdUseCase(repository = get())
+    }
+
+    factory<StartFetchingWaterUseCase> {
+        StartFetchingWaterUseCase(repository = get())
+    }
+
+    factory<StopFetchingWaterUseCase> {
+        StopFetchingWaterUseCase(repository = get())
     }
 }

@@ -5,46 +5,69 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import ru.zar1official.smartbathclient.Constants
-import ru.zar1official.smartbathclient.domain.usecases.DecreaseTemperatureUseCase
-import ru.zar1official.smartbathclient.domain.usecases.IncreaseTemperatureUseCase
-import ru.zar1official.smartbathclient.domain.usecases.ReadBathStateUseCase
-import ru.zar1official.smartbathclient.domain.usecases.ReadTemperatureUseCase
+import ru.zar1official.smartbathclient.domain.usecases.*
 import ru.zar1official.smartbathclient.domain.usecases.result.PostRequestResult
 
 class MainViewModel(
+    private val readUIdUseCase: ReadUIdUseCase,
     private val increaseTemperatureUseCase: IncreaseTemperatureUseCase,
     private val decreaseTemperatureUseCase: DecreaseTemperatureUseCase,
     private val readTemperatureUseCase: ReadTemperatureUseCase,
-    private val readBathStateUseCase: ReadBathStateUseCase
+    private val readBathStateUseCase: ReadBathStateUseCase,
+    private val startFetchingWaterUseCase: StartFetchingWaterUseCase,
+    private val stopFetchingWaterUseCase: StopFetchingWaterUseCase
 ) : ViewModel() {
-    private val _percentage = MutableLiveData<Int>().apply { value = 0 }
+    private val _isLoaded = MutableLiveData<Boolean>()
+    val isLoaded: LiveData<Boolean> = _isLoaded
+
+    private val _percentage = MutableLiveData<Int>()
     val percentage: LiveData<Int> = _percentage
 
-    private val _temperature = MutableLiveData<Int>().apply { value = 0 }
+    private val _temperature = MutableLiveData<Int>()
     val temperature: LiveData<Int> = _temperature
+
+    private val _waterColor = MutableLiveData<Int>()
+    val waterColor: LiveData<Int> = _waterColor
+
+    private val _drainStatus = MutableLiveData<Boolean>()
+    val drainStatus: LiveData<Boolean> = _drainStatus
 
     fun onChangePercentage() {
         val value = percentage.value!!
         _percentage.value = value + 1
     }
 
-    var job: Job? = null
+    private var _uId: Long = 0L
 
 
     fun onStartFetchingWater() {
-        job = viewModelScope.launch {
-            repeat(100) {
-                delay(1000L)
-                onChangePercentage()
-            }
+        if (checkingWaterJob == null) {
+            checkingWaterJob =
+                viewModelScope.launch {
+                    startFetchingWaterUseCase.invoke(_uId)
+                    while (true) {
+                        val state = readBathStateUseCase.invoke(_uId)
+                        val percent = state.fillingProcent.toInt()
+                        if (_percentage.value != percent) {
+                            _percentage.value = percent
+                        }
+                    }
+                }
         }
     }
 
     fun onStopFetchingWater() {
-        job?.cancel()
+        if (checkingWaterJob != null) {
+            checkingWaterJob?.cancelChildren()
+            checkingWaterJob?.cancel()
+            checkingWaterJob = null
+            viewModelScope.launch {
+                stopFetchingWaterUseCase.invoke(_uId)
+            }
+        }
     }
 
     fun onIncreaseTemperature() {
@@ -83,11 +106,18 @@ class MainViewModel(
         }
     }
 
-    fun onStartUpdatingBathState() {
+    private var checkingWaterJob: Job? = null
+
+    fun onUpdateState() {
         viewModelScope.launch {
-            while (true) {
-                readBathStateUseCase.invoke()
-            }
+            val id = readUIdUseCase.invoke()
+            _uId = id
+            val state = readBathStateUseCase.invoke(id)
+            _temperature.value = state.temp
+            _percentage.value = state.fillingProcent.toInt()
+            _waterColor.value = state.waterColor
+            _drainStatus.value = state.drainStatus
+            _isLoaded.value = true
         }
     }
 

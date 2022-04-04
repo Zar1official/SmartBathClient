@@ -31,11 +31,8 @@ class MainActivity : ComponentActivity() {
             }
         }
         lifecycleScope.launch {
-            Toast.makeText(
-                applicationContext,
-                repository.readBathState().craneActie.toString(),
-                Toast.LENGTH_LONG
-            ).show()
+            val data = repository.readBathState(2288950912484137155)
+            Toast.makeText(applicationContext, data.craneActie.toString(), Toast.LENGTH_LONG).show()
         }
     }
 }

@@ -9,6 +9,6 @@ data class BathState(
     val craneActie: Boolean,
     val drainStatus: Boolean,
     val waterColor: Int,
-    val fillingProcent: Int,
+    val fillingProcent: Float,
     val timeStamp: Long
 )

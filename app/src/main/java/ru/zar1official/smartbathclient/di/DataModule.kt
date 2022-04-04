@@ -1,5 +1,9 @@
 package ru.zar1official.smartbathclient.di
 
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.features.*
@@ -7,10 +11,11 @@ import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
 import io.ktor.http.*
 import org.koin.dsl.module
-import ru.zar1official.smartbathclient.data.network.Constants
+import ru.zar1official.smartbathclient.data.network.NetworkConstants
 import ru.zar1official.smartbathclient.data.network.Service
 import ru.zar1official.smartbathclient.data.network.ServiceImpl
 import ru.zar1official.smartbathclient.data.repositories.RepositoryImpl
+import ru.zar1official.smartbathclient.data.storage.StorageConstants
 import ru.zar1official.smartbathclient.domain.repository.Repository
 import java.security.cert.X509Certificate
 import javax.net.ssl.X509TrustManager
@@ -20,8 +25,8 @@ private fun provideKtorClient(): HttpClient {
         defaultRequest {
             url {
                 protocol = URLProtocol.HTTPS
-                host = Constants.BASE_HOST
-                port = Constants.BASE_PORT
+                host = NetworkConstants.BASE_HOST
+                port = NetworkConstants.BASE_PORT
             }
         }
         engine {
@@ -45,9 +50,13 @@ private fun provideKtorClient(): HttpClient {
     }
 }
 
+private val Context.dataStore by preferencesDataStore(name = StorageConstants.STORAGE_SETTINGS_NAME)
+
+private fun provideDataStorage(context: Context) = context.dataStore
+
 val dataModule = module {
     single<Repository> {
-        return@single RepositoryImpl(service = get())
+        return@single RepositoryImpl(service = get(), dataStore = get())
     }
 
     single<Service> {
@@ -56,5 +65,9 @@ val dataModule = module {
 
     single<HttpClient> {
         provideKtorClient()
+    }
+
+    single<DataStore<Preferences>> {
+        provideDataStorage(context = get())
     }
 }
