@@ -1,5 +1,6 @@
 package ru.zar1official.smartbathclient
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,13 +15,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import ru.zar1official.smartbathclient.components.CustomButton
-import ru.zar1official.smartbathclient.components.Timer
+import org.koin.androidx.compose.getViewModel
+import ru.zar1official.smartbathclient.presentation.MainViewModel
+import ru.zar1official.smartbathclient.presentation.components.CustomButton
+import ru.zar1official.smartbathclient.presentation.components.CustomProgress
 import ru.zar1official.smartbathclient.ui.theme.DarkGreen
 
 @Composable
-fun MainScreen(viewModel: MainViewModel) {
-    val percentage = viewModel.percentage.observeAsState(0)
+fun MainScreen(viewModel: MainViewModel = getViewModel()) {
+    val percentage = viewModel.percentage.observeAsState(initial = 0)
+    val temperature = viewModel.temperature.observeAsState(initial = 0)
+
     Column {
         Card(
             modifier = Modifier
@@ -36,12 +41,12 @@ fun MainScreen(viewModel: MainViewModel) {
                 verticalArrangement = Arrangement.Center
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Timer(
+                    CustomProgress(
                         inactiveBarColor = Color.Gray,
                         activeBarColor = Color.Blue,
                         modifier = Modifier.size(200.dp),
                         strokeWidth = 10.dp,
-                        viewModel = viewModel
+                        percentage = percentage
                     )
 
                     Text(
@@ -56,7 +61,8 @@ fun MainScreen(viewModel: MainViewModel) {
                         backgroundColor = DarkGreen,
                         icon = painterResource(id = R.drawable.ic_turn_off),
                         contentDescription = "",
-                        onClick = {}
+                        contentPaddingValues = PaddingValues(20.dp),
+                        onClick = { viewModel.onStartFetchingWater() }
                     )
 
                     Spacer(modifier = Modifier.width(45.dp))
@@ -65,7 +71,8 @@ fun MainScreen(viewModel: MainViewModel) {
                         backgroundColor = Color.Red,
                         icon = painterResource(id = R.drawable.ic_turn_off),
                         contentDescription = "",
-                        onClick = {}
+                        contentPaddingValues = PaddingValues(20.dp),
+                        onClick = { viewModel.onStopFetchingWater() }
                     )
                 }
             }
@@ -82,7 +89,35 @@ fun MainScreen(viewModel: MainViewModel) {
             shape = RoundedCornerShape(10.dp),
             elevation = 3.dp
         ) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CustomButton(
+                    backgroundColor = Color.White,
+                    contentColor = Color.DarkGray,
+                    icon = painterResource(id = R.drawable.ic_decrease_temperature),
+                    contentDescription = "",
+                    contentPaddingValues = PaddingValues(10.dp, 10.dp),
+                    borderStroke = BorderStroke(2.dp, Color.DarkGray),
+                    onClick = { viewModel.onDecreaseTemperature() }
+                )
+                Text(
+                    text = "${temperature.value}℃",
+                    fontSize = MaterialTheme.typography.h5.fontSize,
+                    fontWeight = FontWeight.SemiBold,
+                )
 
+                CustomButton(
+                    backgroundColor = Color.White,
+                    contentColor = Color.DarkGray,
+                    icon = painterResource(id = R.drawable.ic_increase_temperature),
+                    contentDescription = "",
+                    contentPaddingValues = PaddingValues(10.dp),
+                    borderStroke = BorderStroke(2.dp, Color.DarkGray),
+                    onClick = { viewModel.onIncreaseTemperature() }
+                )
+            }
         }
     }
 }

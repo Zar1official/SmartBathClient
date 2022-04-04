@@ -1,9 +1,8 @@
-package ru.zar1official.smartbathclient.components
+package ru.zar1official.smartbathclient.presentation.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
@@ -14,20 +13,18 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import ru.zar1official.smartbathclient.MainViewModel
 
 @Composable
-fun Timer(
+fun CustomProgress(
     inactiveBarColor: Color,
     activeBarColor: Color,
     modifier: Modifier = Modifier,
     strokeWidth: Dp = 10.dp,
-    viewModel: MainViewModel
+    percentage: State<Int>
 ) {
     var size by remember {
         mutableStateOf(IntSize.Zero)
     }
-    val value = viewModel.percentage.observeAsState(initial = 0)
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
@@ -47,7 +44,7 @@ fun Timer(
             drawArc(
                 color = activeBarColor,
                 startAngle = -215f,
-                sweepAngle = 250f * value.value.toFloat() / 100f,
+                sweepAngle = 250f * percentage.value.toFloat() / 100f,
                 useCenter = false,
                 size = Size(size.width.toFloat(), size.height.toFloat()),
                 style = Stroke(strokeWidth.toPx(), cap = StrokeCap.Round)

@@ -1,5 +1,6 @@
-package ru.zar1official.smartbathclient.components
+package ru.zar1official.smartbathclient.presentation.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Button
@@ -18,9 +19,10 @@ fun CustomButton(
     backgroundColor: Color,
     contentColor: Color = Color.White,
     shape: Shape = CircleShape,
-    strokeColor: Color = Color.Black,
     icon: Painter,
     contentDescription: String,
+    contentPaddingValues: PaddingValues,
+    borderStroke: BorderStroke? = null,
     onClick: () -> Unit
 ) {
     Button(
@@ -31,12 +33,13 @@ fun CustomButton(
             0.dp,
             0.dp
         ),
-        contentPadding = PaddingValues(20.dp, 20.dp),
+        contentPadding = contentPaddingValues,
         colors = ButtonDefaults.buttonColors(
             backgroundColor = backgroundColor,
             contentColor = contentColor
-        )
+        ),
+        border = borderStroke
     ) {
-        Icon(painter = icon, contentDescription = "")
+        Icon(painter = icon, contentDescription = contentDescription)
     }
 }
