@@ -22,6 +22,14 @@ class RepositoryImpl(private val service: Service, private val dataStore: DataSt
         service.fetchingWater(uId = uId, fetch = fetch)
     }
 
+    override suspend fun changeWaterColor(uId: Long, color: Int) {
+        service.changeWaterColor(uId = uId, color = color)
+    }
+
+    override suspend fun changeDrainsStatus(uId: Long, drain: Boolean) {
+        service.changeDrainStatus(uId = uId, drain = drain)
+    }
+
 
     override suspend fun insertLongInPrefs(key: String, long: Long) {
         dataStore.edit { settings ->
@@ -40,9 +48,5 @@ class RepositoryImpl(private val service: Service, private val dataStore: DataSt
 
     override suspend fun decreaseTemperature() {
 
-    }
-
-    override suspend fun readTemperature(): Int {
-        return listOf(1, 2, 4, 56, 7, 88).random()
     }
 }
