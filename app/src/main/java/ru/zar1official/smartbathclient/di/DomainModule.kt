@@ -12,10 +12,6 @@ val domainModule = module {
         IncreaseTemperatureUseCase(repository = get())
     }
 
-    factory<ReadTemperatureUseCase> {
-        ReadTemperatureUseCase(repository = get())
-    }
-
     factory<ReadBathStateUseCase> {
         ReadBathStateUseCase(repository = get())
     }
@@ -30,5 +26,17 @@ val domainModule = module {
 
     factory<StopFetchingWaterUseCase> {
         StopFetchingWaterUseCase(repository = get())
+    }
+
+    factory<ChangeWaterColorUseCase> {
+        ChangeWaterColorUseCase(repository = get())
+    }
+
+    factory<OpenDrainUseCase> {
+        OpenDrainUseCase(repository = get())
+    }
+
+    factory<CloseDrainUseCase> {
+        CloseDrainUseCase(repository = get())
     }
 }

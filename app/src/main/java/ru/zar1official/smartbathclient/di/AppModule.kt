@@ -9,11 +9,13 @@ val appModule = module {
         MainViewModel(
             increaseTemperatureUseCase = get(),
             decreaseTemperatureUseCase = get(),
-            readTemperatureUseCase = get(),
             readBathStateUseCase = get(),
             readUIdUseCase = get(),
             startFetchingWaterUseCase = get(),
-            stopFetchingWaterUseCase = get()
+            stopFetchingWaterUseCase = get(),
+            changeWaterColorUseCase = get(),
+            closeDrainUseCase = get(),
+            openDrainUseCase = get()
         )
     }
 }

@@ -19,7 +19,7 @@ fun CustomButton(
     backgroundColor: Color,
     contentColor: Color = Color.White,
     shape: Shape = CircleShape,
-    icon: Painter,
+    icon: Painter? = null,
     contentDescription: String,
     contentPaddingValues: PaddingValues,
     borderStroke: BorderStroke? = null,
@@ -30,8 +30,8 @@ fun CustomButton(
         modifier = modifier,
         shape = shape,
         elevation = ButtonDefaults.elevation(
-            0.dp,
-            0.dp
+            5.dp,
+            5.dp
         ),
         contentPadding = contentPaddingValues,
         colors = ButtonDefaults.buttonColors(
@@ -40,6 +40,7 @@ fun CustomButton(
         ),
         border = borderStroke
     ) {
-        Icon(painter = icon, contentDescription = contentDescription)
+        if (icon != null)
+            Icon(painter = icon, contentDescription = contentDescription)
     }
 }

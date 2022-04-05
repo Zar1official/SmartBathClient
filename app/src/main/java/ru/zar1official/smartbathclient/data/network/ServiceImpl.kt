@@ -27,4 +27,28 @@ class ServiceImpl(private val client: HttpClient) : Service {
             }
         }
     }
+
+    override suspend fun changeWaterColor(uId: Long, color: Int) {
+        client.post<HttpResponse> {
+            url {
+                path("api", "SetBoth")
+                formData {
+                    parameter("uId", uId)
+                    parameter("color", color)
+                }
+            }
+        }
+    }
+
+    override suspend fun changeDrainStatus(uId: Long, drain: Boolean) {
+        client.post<HttpResponse> {
+            url {
+                path("api", "SetBoth")
+                formData {
+                    parameter("uId", uId)
+                    parameter("drainStatus", drain)
+                }
+            }
+        }
+    }
 }
