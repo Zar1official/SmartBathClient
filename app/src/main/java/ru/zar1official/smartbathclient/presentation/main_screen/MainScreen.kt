@@ -9,11 +9,9 @@ import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -33,8 +31,6 @@ import ru.zar1official.smartbathclient.util.round
 
 @Composable
 fun MainScreen(viewModel: MainViewModel = getViewModel()) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val scaffoldState = rememberScaffoldState()
     val isLoaded = viewModel.isLoaded.observeAsState(initial = false)
     val percentage = viewModel.percentage.observeAsState(initial = 0)

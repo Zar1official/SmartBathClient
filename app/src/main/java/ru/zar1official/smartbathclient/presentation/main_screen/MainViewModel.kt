@@ -114,8 +114,7 @@ class MainViewModel(
             viewModelScope.launch {
                 val id = readUIdUseCase.invoke()
                 _uId = id
-                val result = readBathStateUseCase.invoke(id)
-                when (result) {
+                when (val result = readBathStateUseCase.invoke(id)) {
                     is GetRequestResult.NetworkError -> showError()
                     is GetRequestResult.Success<BathState> -> {
                         val state = result.data
