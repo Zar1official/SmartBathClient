@@ -30,6 +30,10 @@ class RepositoryImpl(private val service: Service, private val dataStore: DataSt
         service.changeDrainStatus(uId = uId, drain = drain)
     }
 
+    override suspend fun changeTemperature(uId: Long, temperature: Float) {
+        service.changeTemperatureUseCase(uId = uId, temperature = temperature)
+    }
+
 
     override suspend fun insertLongInPrefs(key: String, long: Long) {
         dataStore.edit { settings ->
@@ -40,13 +44,5 @@ class RepositoryImpl(private val service: Service, private val dataStore: DataSt
 
     override suspend fun readBathState(uId: Long): BathState {
         return service.readBathState(uId = uId)
-    }
-
-    override suspend fun increaseTemperature() {
-
-    }
-
-    override suspend fun decreaseTemperature() {
-
     }
 }

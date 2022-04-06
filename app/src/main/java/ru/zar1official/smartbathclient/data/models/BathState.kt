@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class BathState(
     val uId: Long,
-    val temp: Int,
+    val temp: Float,
     val craneActie: Boolean,
     val drainStatus: Boolean,
     val waterColor: Int,
