@@ -49,8 +49,10 @@ class MainViewModel(
         if (_cranStatus.value != true) {
             onStartCheckingWaterPercentage()
             viewModelScope.launch {
-                startFetchingWaterUseCase.invoke(_uId)
-                _cranStatus.value = true
+                when (startFetchingWaterUseCase.invoke(_uId)) {
+                    PostRequestResult.Error -> showError()
+                    PostRequestResult.Success -> _cranStatus.value = false
+                }
             }
         }
     }
@@ -100,12 +102,15 @@ class MainViewModel(
         val drainValue = drainStatus.value ?: false
         onStartCheckingWaterPercentage()
         viewModelScope.launch {
-            if (drainValue) {
+            val result = if (drainValue) {
                 closeDrainUseCase.invoke(_uId)
             } else {
                 openDrainUseCase.invoke(_uId)
             }
-            _drainStatus.value = !drainValue
+            when (result) {
+                PostRequestResult.Error -> showError()
+                PostRequestResult.Success -> _drainStatus.value = !drainValue
+            }
         }
     }
 
@@ -127,6 +132,7 @@ class MainViewModel(
                         }
                         _drainStatus.value = state.drainStatus
                         _isLoaded.value = true
+                        onStartCheckingWaterPercentage()
                     }
                 }
             }
@@ -136,8 +142,10 @@ class MainViewModel(
     fun onChangeWaterColor(color: WaterColor) {
         if (_waterColor.value != color) {
             viewModelScope.launch {
-                changeWaterColorUseCase.invoke(_uId, color)
-                _waterColor.value = color
+                when (changeWaterColorUseCase.invoke(_uId, color)) {
+                    PostRequestResult.Error -> showError()
+                    PostRequestResult.Success -> _waterColor.value = color
+                }
             }
         }
     }
@@ -148,7 +156,9 @@ class MainViewModel(
 
     fun onSaveTemperature(temperature: Float) {
         viewModelScope.launch {
-            changeTemperatureUseCase.invoke(_uId, temperature)
+            if (changeTemperatureUseCase.invoke(_uId, temperature) == PostRequestResult.Error) {
+                showError()
+            }
         }
     }
 
