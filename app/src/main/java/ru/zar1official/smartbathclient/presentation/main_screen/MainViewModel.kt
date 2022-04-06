@@ -1,19 +1,19 @@
-package ru.zar1official.smartbathclient.presentation
+package ru.zar1official.smartbathclient.presentation.main_screen
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import ru.zar1official.smartbathclient.data.models.BathState
 import ru.zar1official.smartbathclient.domain.usecases.*
+import ru.zar1official.smartbathclient.domain.usecases.result.GetRequestResult
+import ru.zar1official.smartbathclient.domain.usecases.result.PostRequestResult
 
 class MainViewModel(
     private val readUIdUseCase: ReadUIdUseCase,
-    private val increaseTemperatureUseCase: IncreaseTemperatureUseCase,
-    private val decreaseTemperatureUseCase: DecreaseTemperatureUseCase,
+    private val changeTemperatureUseCase: ChangeTemperatureUseCase,
     private val readBathStateUseCase: ReadBathStateUseCase,
     private val startFetchingWaterUseCase: StartFetchingWaterUseCase,
     private val stopFetchingWaterUseCase: StopFetchingWaterUseCase,
@@ -27,8 +27,8 @@ class MainViewModel(
     private val _percentage = MutableLiveData<Int>()
     val percentage: LiveData<Int> = _percentage
 
-    private val _temperature = MutableLiveData<Int>()
-    val temperature: LiveData<Int> = _temperature
+    private val _temperature = MutableLiveData<Float>()
+    val temperature: LiveData<Float> = _temperature
 
     private val _waterColor = MutableLiveData<WaterColor>()
     val waterColor: LiveData<WaterColor> = _waterColor
@@ -41,6 +41,8 @@ class MainViewModel(
 
     private var _uId: Long = 0L
     private var checkingWaterJob: Job? = null
+
+    val event = Channel<MainScreenEvent>(Channel.BUFFERED)
 
 
     fun onStartFetchingWater() {
@@ -55,10 +57,11 @@ class MainViewModel(
 
     fun onStopFetchingWater() {
         if (_cranStatus.value != false) {
-            onStartCheckingWaterPercentage()
             viewModelScope.launch {
-                stopFetchingWaterUseCase.invoke(_uId)
-                _cranStatus.value = false
+                when (stopFetchingWaterUseCase.invoke(_uId)) {
+                    PostRequestResult.Error -> showError()
+                    PostRequestResult.Success -> _cranStatus.value = false
+                }
             }
         }
     }
@@ -68,12 +71,18 @@ class MainViewModel(
             checkingWaterJob =
                 viewModelScope.launch {
                     while (true) {
-                        val state = readBathStateUseCase.invoke(_uId)
-                        val percent = state.fillingProcent.toInt()
-                        if (_percentage.value != percent) {
-                            _percentage.value = percent
+                        val result = readBathStateUseCase.invoke(_uId)
+                        when (result) {
+                            is GetRequestResult.NetworkError -> this.cancel()
+                            is GetRequestResult.Success<BathState> -> {
+                                val state = result.data
+                                val percent = state.fillingProcent.toInt()
+                                if (_percentage.value != percent) {
+                                    _percentage.value = percent
+                                }
+                                delay(1000L)
+                            }
                         }
-                        delay(1000L)
                     }
                 }
         }
@@ -105,16 +114,22 @@ class MainViewModel(
             viewModelScope.launch {
                 val id = readUIdUseCase.invoke()
                 _uId = id
-                val state = readBathStateUseCase.invoke(id)
-                _temperature.value = state.temp
-                _percentage.value = state.fillingProcent.toInt()
-                _waterColor.value = when (state.waterColor) {
-                    0 -> WaterColor.Red
-                    1 -> WaterColor.Normal
-                    else -> WaterColor.Blue
+                val result = readBathStateUseCase.invoke(id)
+                when (result) {
+                    is GetRequestResult.NetworkError -> showError()
+                    is GetRequestResult.Success<BathState> -> {
+                        val state = result.data
+                        _temperature.value = state.temp
+                        _percentage.value = state.fillingProcent.toInt()
+                        _waterColor.value = when (state.waterColor) {
+                            0 -> WaterColor.Red
+                            1 -> WaterColor.Normal
+                            else -> WaterColor.Blue
+                        }
+                        _drainStatus.value = state.drainStatus
+                        _isLoaded.value = true
+                    }
                 }
-                _drainStatus.value = state.drainStatus
-                _isLoaded.value = true
             }
         }
     }
@@ -126,6 +141,20 @@ class MainViewModel(
                 _waterColor.value = color
             }
         }
+    }
+
+    fun onChangeTemperature(temperature: Float) {
+        _temperature.value = temperature
+    }
+
+    fun onSaveTemperature(temperature: Float) {
+        viewModelScope.launch {
+            changeTemperatureUseCase.invoke(_uId, temperature)
+        }
+    }
+
+    private fun showError() {
+        event.trySend(MainScreenEvent.Error)
     }
 
 }

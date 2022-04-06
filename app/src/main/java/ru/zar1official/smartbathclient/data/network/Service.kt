@@ -7,4 +7,5 @@ interface Service {
     suspend fun fetchingWater(uId: Long, fetch: Boolean)
     suspend fun changeWaterColor(uId: Long, color: Int)
     suspend fun changeDrainStatus(uId: Long, drain: Boolean)
+    suspend fun changeTemperatureUseCase(uId: Long, temperature: Float)
 }
