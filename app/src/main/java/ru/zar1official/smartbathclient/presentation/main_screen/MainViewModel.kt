@@ -4,8 +4,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import ru.zar1official.smartbathclient.data.models.BathState
 import ru.zar1official.smartbathclient.domain.usecases.*
 import ru.zar1official.smartbathclient.domain.usecases.result.GetRequestResult
@@ -42,16 +45,14 @@ class MainViewModel(
     private var _uId: Long = 0L
     private var checkingWaterJob: Job? = null
 
-    val event = Channel<MainScreenEvent>(Channel.BUFFERED)
-
+    val event = Channel<MainScreenEvent>(0)
 
     fun onStartFetchingWater() {
         if (_cranStatus.value != true) {
-            onStartCheckingWaterPercentage()
             viewModelScope.launch {
                 when (startFetchingWaterUseCase.invoke(_uId)) {
                     PostRequestResult.Error -> showError()
-                    PostRequestResult.Success -> _cranStatus.value = false
+                    PostRequestResult.Success -> _cranStatus.value = true
                 }
             }
         }
@@ -75,7 +76,7 @@ class MainViewModel(
                     while (true) {
                         val result = readBathStateUseCase.invoke(_uId)
                         when (result) {
-                            is GetRequestResult.NetworkError -> this.cancel()
+                            is GetRequestResult.NetworkError -> onStopCheckingWaterPercentage()
                             is GetRequestResult.Success<BathState> -> {
                                 val state = result.data
                                 val percent = state.fillingProcent.toInt()
@@ -91,16 +92,13 @@ class MainViewModel(
     }
 
     private fun onStopCheckingWaterPercentage() {
-        if (checkingWaterJob != null) {
-            checkingWaterJob?.cancelChildren()
-            checkingWaterJob?.cancel()
-            checkingWaterJob = null
-        }
+        checkingWaterJob?.cancelChildren()
+        checkingWaterJob?.cancel()
+        checkingWaterJob = null
     }
 
     fun onChangeDrainStatus() {
         val drainValue = drainStatus.value ?: false
-        onStartCheckingWaterPercentage()
         viewModelScope.launch {
             val result = if (drainValue) {
                 closeDrainUseCase.invoke(_uId)
@@ -120,7 +118,7 @@ class MainViewModel(
                 val id = readUIdUseCase.invoke()
                 _uId = id
                 when (val result = readBathStateUseCase.invoke(id)) {
-                    is GetRequestResult.NetworkError -> showError()
+                    is GetRequestResult.NetworkError -> showLoadingError()
                     is GetRequestResult.Success<BathState> -> {
                         val state = result.data
                         _temperature.value = state.temp
@@ -131,6 +129,7 @@ class MainViewModel(
                             else -> WaterColor.Blue
                         }
                         _drainStatus.value = state.drainStatus
+                        _cranStatus.value = state.craneActie
                         _isLoaded.value = true
                         onStartCheckingWaterPercentage()
                     }
@@ -166,4 +165,7 @@ class MainViewModel(
         event.trySend(MainScreenEvent.Error)
     }
 
+    private fun showLoadingError() {
+        event.trySend(MainScreenEvent.LoadingError)
+    }
 }
