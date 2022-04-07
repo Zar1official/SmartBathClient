@@ -6,7 +6,7 @@ import ru.zar1official.smartbathclient.domain.repository.Repository
 import ru.zar1official.smartbathclient.domain.usecases.result.PostRequestResult
 
 class OpenDrainUseCase(private val repository: Repository) {
-    suspend fun invoke(uId: Long) = withContext(Dispatchers.IO) {
+    suspend fun invoke(uId: Long): PostRequestResult = withContext(Dispatchers.IO) {
         kotlin.runCatching { repository.changeDrainsStatus(uId = uId, drain = true) }.onFailure {
             return@withContext PostRequestResult.Error
         }

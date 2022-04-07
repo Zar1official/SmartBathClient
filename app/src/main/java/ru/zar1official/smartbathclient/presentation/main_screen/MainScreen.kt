@@ -9,16 +9,15 @@ import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.channels.consumeEach
 import org.koin.androidx.compose.getViewModel
 import ru.zar1official.smartbathclient.domain.usecases.WaterColor
@@ -33,8 +32,6 @@ import ru.zar1official.smartbathclient.util.round
 
 @Composable
 fun MainScreen(viewModel: MainViewModel = getViewModel()) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val scaffoldState = rememberScaffoldState()
     val isLoaded = viewModel.isLoaded.observeAsState(initial = false)
     val percentage = viewModel.percentage.observeAsState(initial = 0)
@@ -42,6 +39,8 @@ fun MainScreen(viewModel: MainViewModel = getViewModel()) {
     val selectedColor = viewModel.waterColor.observeAsState(initial = WaterColor.Normal)
     val drainStatus = viewModel.drainStatus.observeAsState(initial = false)
     val craneStatus = viewModel.cranStatus.observeAsState(initial = false)
+    val snackBarErrorMessage = stringResource(id = R.string.error_message)
+    val snackBarErrorLabel = stringResource(id = R.string.error_label)
 
     Scaffold(
         topBar = {
@@ -56,12 +55,24 @@ fun MainScreen(viewModel: MainViewModel = getViewModel()) {
             contentAlignment = Alignment.Center
         ) {
             LaunchedEffect(true) {
-                viewModel.event.consumeEach {
-                    when (it) {
-                        is MainScreenEvent.Error -> scaffoldState.snackbarHostState.showSnackbar(
-                            message = "Something went wrong. Check your internet connection!",
-                            duration = SnackbarDuration.Short
-                        )
+                viewModel.event.consumeEach { event ->
+                    when (event) {
+                        is MainScreenEvent.Error -> {
+                            scaffoldState.snackbarHostState.showSnackbar(
+                                message = snackBarErrorMessage,
+                                duration = SnackbarDuration.Short,
+                            )
+                        }
+                        is MainScreenEvent.LoadingError -> {
+                            val result = scaffoldState.snackbarHostState.showSnackbar(
+                                message = snackBarErrorMessage,
+                                duration = SnackbarDuration.Indefinite,
+                                actionLabel = snackBarErrorLabel
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                viewModel.onUpdateState()
+                            }
+                        }
                     }
                 }
             }
@@ -191,14 +202,14 @@ fun MainScreen(viewModel: MainViewModel = getViewModel()) {
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(100.dp)
+                                    .height(75.dp)
                                     .background(color = Color.White),
                                 shape = RoundedCornerShape(10.dp),
                                 elevation = 2.dp
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
+                                    horizontalArrangement = Arrangement.SpaceEvenly
                                 ) {
                                     Slider(
                                         modifier = Modifier.requiredWidth(200.dp),
@@ -219,6 +230,7 @@ fun MainScreen(viewModel: MainViewModel = getViewModel()) {
                                     Spacer(modifier = Modifier.width(45.dp))
 
                                     Text(
+                                        modifier = Modifier.requiredWidth(80.dp),
                                         text = "${temperature.value.round(decimals = 1)}℃",
                                         fontSize = MaterialTheme.typography.h5.fontSize,
                                         fontWeight = FontWeight.SemiBold,
@@ -233,20 +245,33 @@ fun MainScreen(viewModel: MainViewModel = getViewModel()) {
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(100.dp)
+                                    .height(125.dp)
                                     .background(color = Color.White),
                                 shape = RoundedCornerShape(10.dp),
                                 elevation = 2.dp
                             ) {
-                                Text(text = "Water color", textAlign = TextAlign.Center)
+                                Text(
+                                    text = "Water color",
+                                    textAlign = TextAlign.Center,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 18.sp,
+                                )
                                 ButtonGroup(
-                                    modifier = Modifier.padding(start = 35.dp, end = 35.dp),
+                                    modifier = Modifier.padding(
+                                        top = 20.dp,
+                                        start = 35.dp,
+                                        end = 35.dp
+                                    ),
                                     buttons = listOf(
                                         WaterColor.Red,
                                         WaterColor.Normal,
                                         WaterColor.Blue
                                     ),
-                                    onChangeColor = { color -> viewModel.onChangeWaterColor(color) },
+                                    onChangeColor = { color ->
+                                        viewModel.onChangeWaterColor(
+                                            color
+                                        )
+                                    },
                                     selectedButton = selectedColor,
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,

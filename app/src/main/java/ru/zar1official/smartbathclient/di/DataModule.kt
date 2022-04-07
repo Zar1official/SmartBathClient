@@ -29,6 +29,7 @@ private fun provideKtorClient(): HttpClient {
                 port = NetworkConstants.BASE_PORT
             }
         }
+        /* I use it to connect to localhost, by some reasons it's not trusted*/
         engine {
             https {
                 trustManager = object : X509TrustManager {

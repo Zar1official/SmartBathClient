@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">SmartBathClient</string>
+    <string name="error_message">Check your internet connection!</string>
+    <string name="error_label">Try again</string>
 </resources>
