@@ -4,6 +4,7 @@ Repository for SmartBathClient on Hackathon BeCoder2022
 
 ## Stack used
 * Kotlin
+* Android SDK
 * Clean Architecture
 * Jetpack Compose
 * Ktor
