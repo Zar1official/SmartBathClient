@@ -14,4 +14,4 @@ Repository for SmartBathClient on Hackathon BeCoder2022
 * Koin
 * Kotlin Coroutines
 
-<img src="https://user-images.githubusercontent.com/87152110/162284678-41245da3-9e4a-46f4-9b81-be9ab4f1ef7d.png" width = 600/>
+<img src="https://user-images.githubusercontent.com/87152110/163999529-b6089485-7881-47d7-b2cd-af61ac68cd7b.png" width = 600/>
