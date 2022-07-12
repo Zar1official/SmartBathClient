@@ -18,7 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.getViewModel
 import ru.zar1official.smartbathclient.domain.usecases.WaterColor
 import ru.zar1official.smartbathclient.presentation.components.AppBarWithTitle
@@ -55,7 +55,7 @@ fun MainScreen(viewModel: MainViewModel = getViewModel()) {
             contentAlignment = Alignment.Center
         ) {
             LaunchedEffect(true) {
-                viewModel.event.consumeEach { event ->
+                viewModel.event.collectLatest { event ->
                     when (event) {
                         is MainScreenEvent.Error -> {
                             scaffoldState.snackbarHostState.showSnackbar(

@@ -6,8 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import ru.zar1official.smartbathclient.data.models.BathState
 import ru.zar1official.smartbathclient.domain.usecases.*
@@ -45,7 +46,8 @@ class MainViewModel(
     private var _uId: Long = 0L
     private var checkingWaterJob: Job? = null
 
-    val event = Channel<MainScreenEvent>(0)
+    private val _event = MutableSharedFlow<MainScreenEvent>()
+    val event = _event.asSharedFlow()
 
     fun onStartFetchingWater() {
         if (_cranStatus.value != true) {
@@ -161,11 +163,11 @@ class MainViewModel(
         }
     }
 
-    private fun showError() {
-        event.trySend(MainScreenEvent.Error)
+    private suspend fun showError() {
+        _event.emit(MainScreenEvent.Error)
     }
 
-    private fun showLoadingError() {
-        event.trySend(MainScreenEvent.LoadingError)
+    private suspend fun showLoadingError() {
+        _event.emit(MainScreenEvent.LoadingError)
     }
 }
