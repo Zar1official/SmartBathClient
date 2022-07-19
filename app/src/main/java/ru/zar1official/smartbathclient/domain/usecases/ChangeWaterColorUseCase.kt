@@ -6,7 +6,7 @@ import ru.zar1official.smartbathclient.domain.repository.Repository
 import ru.zar1official.smartbathclient.domain.usecases.result.PostRequestResult
 
 class ChangeWaterColorUseCase(private val repository: Repository) {
-    suspend fun invoke(uId: Long, color: WaterColor): PostRequestResult =
+    suspend operator fun invoke(uId: Long, color: WaterColor): PostRequestResult =
         withContext(Dispatchers.IO) {
             val colorValue = when (color) {
                 WaterColor.Red -> 0

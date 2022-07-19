@@ -31,7 +31,7 @@ class RepositoryImpl(private val service: Service, private val dataStore: DataSt
     }
 
     override suspend fun changeTemperature(uId: Long, temperature: Float) {
-        service.changeTemperatureUseCase(uId = uId, temperature = temperature)
+        service.changeTemperature(uId = uId, temperature = temperature)
     }
 
 

@@ -6,7 +6,7 @@ import ru.zar1official.smartbathclient.domain.repository.Repository
 import ru.zar1official.smartbathclient.domain.usecases.result.PostRequestResult
 
 class ChangeTemperatureUseCase(private val repository: Repository) {
-    suspend fun invoke(uId: Long, temperature: Float): PostRequestResult =
+    suspend operator fun invoke(uId: Long, temperature: Float): PostRequestResult =
         withContext(Dispatchers.IO) {
             kotlin.runCatching {
                 repository.changeTemperature(

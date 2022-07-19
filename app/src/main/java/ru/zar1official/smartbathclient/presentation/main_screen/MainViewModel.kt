@@ -3,8 +3,6 @@ package ru.zar1official.smartbathclient.presentation.main_screen
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -28,9 +26,6 @@ class MainViewModel(
     private val closeDrainUseCase: CloseDrainUseCase,
     private val openDrainUseCase: OpenDrainUseCase
 ) : ViewModel() {
-    private val _isLoaded = MutableLiveData<Boolean>()
-    val isLoaded: LiveData<Boolean> = _isLoaded
-
     private var _uId: Long = 0L
     private var checkingWaterJob: Job? = null
 
@@ -45,7 +40,7 @@ class MainViewModel(
             checkingWaterJob =
                 viewModelScope.launch {
                     while (true) {
-                        when (val result = readBathStateUseCase.invoke(_uId)) {
+                        when (val result = readBathStateUseCase(_uId)) {
                             is GetRequestResult.NetworkError -> onStopCheckingWaterPercentage()
                             is GetRequestResult.Success<BathState> -> {
                                 val state = result.data
@@ -68,9 +63,9 @@ class MainViewModel(
 
                 viewModelScope.launch {
                     val result = if (drainValue) {
-                        closeDrainUseCase.invoke(_uId)
+                        closeDrainUseCase(_uId)
                     } else {
-                        openDrainUseCase.invoke(_uId)
+                        openDrainUseCase(_uId)
                     }
                     when (result) {
                         PostRequestResult.Error -> showError()
@@ -86,7 +81,7 @@ class MainViewModel(
 
                 if (screenState.waterColor != color) {
                     viewModelScope.launch {
-                        when (changeWaterColorUseCase.invoke(_uId, color)) {
+                        when (changeWaterColorUseCase(_uId, color)) {
                             PostRequestResult.Error -> showError()
                             PostRequestResult.Success -> screenState =
                                 screenState.copy(waterColor = color)
@@ -97,7 +92,7 @@ class MainViewModel(
 
             is MainScreenIntent.SaveTemperature -> {
                 viewModelScope.launch {
-                    if (changeTemperatureUseCase.invoke(
+                    if (changeTemperatureUseCase(
                             _uId,
                             screenState.temperature
                         ) == PostRequestResult.Error
@@ -114,7 +109,7 @@ class MainViewModel(
             is MainScreenIntent.StartFetchWater -> {
                 if (!screenState.craneStatus) {
                     viewModelScope.launch {
-                        when (startFetchingWaterUseCase.invoke(_uId)) {
+                        when (startFetchingWaterUseCase(_uId)) {
                             PostRequestResult.Error -> showError()
                             PostRequestResult.Success -> screenState =
                                 screenState.copy(craneStatus = true)
@@ -126,7 +121,7 @@ class MainViewModel(
             is MainScreenIntent.StopFetchWater -> {
                 if (screenState.craneStatus) {
                     viewModelScope.launch {
-                        when (stopFetchingWaterUseCase.invoke(_uId)) {
+                        when (stopFetchingWaterUseCase(_uId)) {
                             PostRequestResult.Error -> showError()
                             PostRequestResult.Success -> screenState =
                                 screenState.copy(craneStatus = false)
@@ -138,9 +133,9 @@ class MainViewModel(
             is MainScreenIntent.UpdateState -> {
                 if (!screenState.isLoaded) {
                     viewModelScope.launch {
-                        val id = readUIdUseCase.invoke()
+                        val id = readUIdUseCase()
                         _uId = id
-                        when (val result = readBathStateUseCase.invoke(id)) {
+                        when (val result = readBathStateUseCase(id)) {
                             is GetRequestResult.NetworkError -> showLoadingError()
                             is GetRequestResult.Success<BathState> -> {
                                 val state = result.data

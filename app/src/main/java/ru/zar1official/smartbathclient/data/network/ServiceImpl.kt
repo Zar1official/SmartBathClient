@@ -55,7 +55,7 @@ class ServiceImpl(private val client: HttpClient) : Service {
         }
     }
 
-    override suspend fun changeTemperatureUseCase(uId: Long, temperature: Float) {
+    override suspend fun changeTemperature(uId: Long, temperature: Float) {
         client.post<HttpResponse> {
             url {
                 path(*setPath)
