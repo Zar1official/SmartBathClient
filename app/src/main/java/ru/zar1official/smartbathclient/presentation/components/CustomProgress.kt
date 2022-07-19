@@ -20,7 +20,7 @@ fun CustomProgress(
     activeBarColor: Color,
     modifier: Modifier = Modifier,
     strokeWidth: Dp = 10.dp,
-    percentage: State<Int>
+    percentage: Int
 ) {
     var size by remember {
         mutableStateOf(IntSize.Zero)
@@ -44,7 +44,7 @@ fun CustomProgress(
             drawArc(
                 color = activeBarColor,
                 startAngle = -215f,
-                sweepAngle = 250f * percentage.value.toFloat() / 100f,
+                sweepAngle = 250f * percentage.toFloat() / 100f,
                 useCenter = false,
                 size = Size(size.width.toFloat(), size.height.toFloat()),
                 style = Stroke(strokeWidth.toPx(), cap = StrokeCap.Round)

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -17,7 +16,7 @@ fun ButtonGroup(
     modifier: Modifier = Modifier,
     buttons: List<WaterColor>,
     onChangeColor: (button: WaterColor) -> Unit,
-    selectedButton: State<WaterColor>,
+    selectedButton: WaterColor,
     horizontalArrangement: Arrangement.Horizontal,
     verticalAlignment: Alignment.Vertical,
     contentPaddingValues: PaddingValues,
@@ -37,7 +36,7 @@ fun ButtonGroup(
                 onClick = {
                     onChangeColor.invoke(button)
                 },
-                borderStroke = if (selectedButton.value == button) BorderStroke(
+                borderStroke = if (selectedButton == button) BorderStroke(
                     borderStrokeWidth,
                     borderStrokeColor
                 ) else null

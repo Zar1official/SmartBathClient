@@ -1,5 +1,8 @@
 package ru.zar1official.smartbathclient.presentation.main_screen
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -28,62 +31,27 @@ class MainViewModel(
     private val _isLoaded = MutableLiveData<Boolean>()
     val isLoaded: LiveData<Boolean> = _isLoaded
 
-    private val _percentage = MutableLiveData<Int>()
-    val percentage: LiveData<Int> = _percentage
-
-    private val _temperature = MutableLiveData<Float>()
-    val temperature: LiveData<Float> = _temperature
-
-    private val _waterColor = MutableLiveData<WaterColor>()
-    val waterColor: LiveData<WaterColor> = _waterColor
-
-    private val _drainStatus = MutableLiveData<Boolean>()
-    val drainStatus: LiveData<Boolean> = _drainStatus
-
-    private val _cranStatus = MutableLiveData<Boolean>()
-    val cranStatus: LiveData<Boolean> = _cranStatus
-
     private var _uId: Long = 0L
     private var checkingWaterJob: Job? = null
 
+    var screenState by mutableStateOf(MainScreenState())
+        private set
+
     private val _event = MutableSharedFlow<MainScreenEvent>()
     val event = _event.asSharedFlow()
-
-    fun onStartFetchingWater() {
-        if (_cranStatus.value != true) {
-            viewModelScope.launch {
-                when (startFetchingWaterUseCase.invoke(_uId)) {
-                    PostRequestResult.Error -> showError()
-                    PostRequestResult.Success -> _cranStatus.value = true
-                }
-            }
-        }
-    }
-
-    fun onStopFetchingWater() {
-        if (_cranStatus.value != false) {
-            viewModelScope.launch {
-                when (stopFetchingWaterUseCase.invoke(_uId)) {
-                    PostRequestResult.Error -> showError()
-                    PostRequestResult.Success -> _cranStatus.value = false
-                }
-            }
-        }
-    }
 
     private fun onStartCheckingWaterPercentage() {
         if (checkingWaterJob == null) {
             checkingWaterJob =
                 viewModelScope.launch {
                     while (true) {
-                        val result = readBathStateUseCase.invoke(_uId)
-                        when (result) {
+                        when (val result = readBathStateUseCase.invoke(_uId)) {
                             is GetRequestResult.NetworkError -> onStopCheckingWaterPercentage()
                             is GetRequestResult.Success<BathState> -> {
                                 val state = result.data
                                 val percent = state.fillingProcent.toInt()
-                                if (_percentage.value != percent) {
-                                    _percentage.value = percent
+                                if (screenState.percentage != percent) {
+                                    screenState = screenState.copy(percentage = percent)
                                 }
                                 delay(1000L)
                             }
@@ -93,74 +61,114 @@ class MainViewModel(
         }
     }
 
-    private fun onStopCheckingWaterPercentage() {
-        checkingWaterJob?.cancelChildren()
-        checkingWaterJob?.cancel()
-        checkingWaterJob = null
-    }
+    fun onSendIntent(intent: MainScreenIntent) {
+        when (intent) {
+            is MainScreenIntent.ChangeDrainStatus -> {
+                val drainValue = screenState.drainStatus
 
-    fun onChangeDrainStatus() {
-        val drainValue = drainStatus.value ?: false
-        viewModelScope.launch {
-            val result = if (drainValue) {
-                closeDrainUseCase.invoke(_uId)
-            } else {
-                openDrainUseCase.invoke(_uId)
-            }
-            when (result) {
-                PostRequestResult.Error -> showError()
-                PostRequestResult.Success -> _drainStatus.value = !drainValue
-            }
-        }
-    }
-
-    fun onUpdateState() {
-        if (_isLoaded.value != true) {
-            viewModelScope.launch {
-                val id = readUIdUseCase.invoke()
-                _uId = id
-                when (val result = readBathStateUseCase.invoke(id)) {
-                    is GetRequestResult.NetworkError -> showLoadingError()
-                    is GetRequestResult.Success<BathState> -> {
-                        val state = result.data
-                        _temperature.value = state.temp
-                        _percentage.value = state.fillingProcent.toInt()
-                        _waterColor.value = when (state.waterColor) {
-                            0 -> WaterColor.Red
-                            1 -> WaterColor.Normal
-                            else -> WaterColor.Blue
+                viewModelScope.launch {
+                    val result = if (drainValue) {
+                        closeDrainUseCase.invoke(_uId)
+                    } else {
+                        openDrainUseCase.invoke(_uId)
+                    }
+                    when (result) {
+                        PostRequestResult.Error -> showError()
+                        PostRequestResult.Success -> {
+                            screenState = screenState.copy(drainStatus = !drainValue)
                         }
-                        _drainStatus.value = state.drainStatus
-                        _cranStatus.value = state.craneActie
-                        _isLoaded.value = true
-                        onStartCheckingWaterPercentage()
+                    }
+                }
+            }
+
+            is MainScreenIntent.ChangeWaterColor -> {
+                val color = intent.color
+
+                if (screenState.waterColor != color) {
+                    viewModelScope.launch {
+                        when (changeWaterColorUseCase.invoke(_uId, color)) {
+                            PostRequestResult.Error -> showError()
+                            PostRequestResult.Success -> screenState =
+                                screenState.copy(waterColor = color)
+                        }
+                    }
+                }
+            }
+
+            is MainScreenIntent.SaveTemperature -> {
+                viewModelScope.launch {
+                    if (changeTemperatureUseCase.invoke(
+                            _uId,
+                            screenState.temperature
+                        ) == PostRequestResult.Error
+                    ) {
+                        showError()
+                    }
+                }
+            }
+
+            is MainScreenIntent.ChangeTemperature -> {
+                screenState = screenState.copy(temperature = intent.temperature)
+            }
+
+            is MainScreenIntent.StartFetchWater -> {
+                if (!screenState.craneStatus) {
+                    viewModelScope.launch {
+                        when (startFetchingWaterUseCase.invoke(_uId)) {
+                            PostRequestResult.Error -> showError()
+                            PostRequestResult.Success -> screenState =
+                                screenState.copy(craneStatus = true)
+                        }
+                    }
+                }
+            }
+
+            is MainScreenIntent.StopFetchWater -> {
+                if (screenState.craneStatus) {
+                    viewModelScope.launch {
+                        when (stopFetchingWaterUseCase.invoke(_uId)) {
+                            PostRequestResult.Error -> showError()
+                            PostRequestResult.Success -> screenState =
+                                screenState.copy(craneStatus = false)
+                        }
+                    }
+                }
+            }
+
+            is MainScreenIntent.UpdateState -> {
+                if (!screenState.isLoaded) {
+                    viewModelScope.launch {
+                        val id = readUIdUseCase.invoke()
+                        _uId = id
+                        when (val result = readBathStateUseCase.invoke(id)) {
+                            is GetRequestResult.NetworkError -> showLoadingError()
+                            is GetRequestResult.Success<BathState> -> {
+                                val state = result.data
+                                screenState = screenState.copy(
+                                    isLoaded = true,
+                                    craneStatus = state.craneActie,
+                                    drainStatus = state.drainStatus,
+                                    percentage = state.fillingProcent.toInt(),
+                                    waterColor = when (state.waterColor) {
+                                        0 -> WaterColor.Red
+                                        1 -> WaterColor.Normal
+                                        else -> WaterColor.Blue
+                                    },
+                                    temperature = state.temp
+                                )
+                                onStartCheckingWaterPercentage()
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
-    fun onChangeWaterColor(color: WaterColor) {
-        if (_waterColor.value != color) {
-            viewModelScope.launch {
-                when (changeWaterColorUseCase.invoke(_uId, color)) {
-                    PostRequestResult.Error -> showError()
-                    PostRequestResult.Success -> _waterColor.value = color
-                }
-            }
-        }
-    }
-
-    fun onChangeTemperature(temperature: Float) {
-        _temperature.value = temperature
-    }
-
-    fun onSaveTemperature(temperature: Float) {
-        viewModelScope.launch {
-            if (changeTemperatureUseCase.invoke(_uId, temperature) == PostRequestResult.Error) {
-                showError()
-            }
-        }
+    private fun onStopCheckingWaterPercentage() {
+        checkingWaterJob?.cancelChildren()
+        checkingWaterJob?.cancel()
+        checkingWaterJob = null
     }
 
     private suspend fun showError() {

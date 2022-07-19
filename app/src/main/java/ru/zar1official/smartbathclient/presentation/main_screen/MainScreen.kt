@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,6 +25,7 @@ import ru.zar1official.smartbathclient.presentation.components.ButtonGroup
 import ru.zar1official.smartbathclient.presentation.components.CustomButton
 import ru.zar1official.smartbathclient.presentation.components.CustomProgress
 import ru.zar1official.smartbathclient.presentation.main_screen.MainScreenEvent
+import ru.zar1official.smartbathclient.presentation.main_screen.MainScreenIntent
 import ru.zar1official.smartbathclient.presentation.main_screen.MainViewModel
 import ru.zar1official.smartbathclient.ui.theme.DarkGreen
 import ru.zar1official.smartbathclient.util.round
@@ -33,14 +33,9 @@ import ru.zar1official.smartbathclient.util.round
 @Composable
 fun MainScreen(viewModel: MainViewModel = getViewModel()) {
     val scaffoldState = rememberScaffoldState()
-    val isLoaded = viewModel.isLoaded.observeAsState(initial = false)
-    val percentage = viewModel.percentage.observeAsState(initial = 0)
-    val temperature = viewModel.temperature.observeAsState(initial = 35f)
-    val selectedColor = viewModel.waterColor.observeAsState(initial = WaterColor.Normal)
-    val drainStatus = viewModel.drainStatus.observeAsState(initial = false)
-    val craneStatus = viewModel.cranStatus.observeAsState(initial = false)
     val snackBarErrorMessage = stringResource(id = R.string.error_message)
     val snackBarErrorLabel = stringResource(id = R.string.error_label)
+    val screenState = viewModel.screenState
 
     Scaffold(
         topBar = {
@@ -70,13 +65,13 @@ fun MainScreen(viewModel: MainViewModel = getViewModel()) {
                                 actionLabel = snackBarErrorLabel
                             )
                             if (result == SnackbarResult.ActionPerformed) {
-                                viewModel.onUpdateState()
+                                viewModel.onSendIntent(MainScreenIntent.UpdateState)
                             }
                         }
                     }
                 }
             }
-            if (isLoaded.value) {
+            if (screenState.isLoaded) {
                 LazyColumn(
                     verticalArrangement = Arrangement.Center,
                     contentPadding = PaddingValues(
@@ -105,11 +100,11 @@ fun MainScreen(viewModel: MainViewModel = getViewModel()) {
                                             activeBarColor = Color.Blue,
                                             modifier = Modifier.size(200.dp),
                                             strokeWidth = 10.dp,
-                                            percentage = percentage
+                                            percentage = screenState.percentage
                                         )
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Text(
-                                                text = "${percentage.value}%",
+                                                text = "${screenState.percentage}%",
                                                 fontSize = MaterialTheme.typography.h5.fontSize,
                                                 fontWeight = FontWeight.SemiBold,
                                                 textAlign = TextAlign.Center
@@ -132,7 +127,7 @@ fun MainScreen(viewModel: MainViewModel = getViewModel()) {
                                             icon = painterResource(id = R.drawable.ic_turn_off),
                                             contentDescription = "",
                                             contentPaddingValues = PaddingValues(20.dp),
-                                            onClick = { viewModel.onStartFetchingWater() }
+                                            onClick = { viewModel.onSendIntent(MainScreenIntent.StartFetchWater) }
                                         )
 
                                         Spacer(modifier = Modifier.width(45.dp))
@@ -142,7 +137,7 @@ fun MainScreen(viewModel: MainViewModel = getViewModel()) {
                                             icon = painterResource(id = R.drawable.ic_turn_off),
                                             contentDescription = "",
                                             contentPaddingValues = PaddingValues(20.dp),
-                                            onClick = { viewModel.onStopFetchingWater() }
+                                            onClick = { viewModel.onSendIntent(MainScreenIntent.StopFetchWater) }
                                         )
                                     }
                                 }
@@ -166,13 +161,13 @@ fun MainScreen(viewModel: MainViewModel = getViewModel()) {
                                 ) {
                                     Column {
                                         Text(
-                                            text = "Drain: ${if (drainStatus.value) "opened" else "closed"}",
+                                            text = "Drain: ${if (screenState.drainStatus) "opened" else "closed"}",
                                             fontSize = MaterialTheme.typography.h6.fontSize,
                                             fontWeight = FontWeight.SemiBold,
                                         )
 
                                         Text(
-                                            text = "Crane: ${if (craneStatus.value) "opened" else "closed"}",
+                                            text = "Crane: ${if (screenState.craneStatus) "opened" else "closed"}",
                                             fontSize = MaterialTheme.typography.h6.fontSize,
                                             fontWeight = FontWeight.SemiBold,
                                         )
@@ -183,14 +178,14 @@ fun MainScreen(viewModel: MainViewModel = getViewModel()) {
                                     CustomButton(
                                         backgroundColor = Color.White,
                                         contentColor = Color.DarkGray,
-                                        icon = if (drainStatus.value)
+                                        icon = if (screenState.drainStatus)
                                             painterResource(id = R.drawable.ic_close_drain)
                                         else
                                             painterResource(id = R.drawable.ic_open_drain),
                                         contentDescription = "",
                                         contentPaddingValues = PaddingValues(10.dp),
                                         borderStroke = BorderStroke(2.dp, Color.DarkGray),
-                                        onClick = { viewModel.onChangeDrainStatus() }
+                                        onClick = { viewModel.onSendIntent(MainScreenIntent.ChangeDrainStatus) }
                                     )
                                 }
                             }
@@ -213,16 +208,20 @@ fun MainScreen(viewModel: MainViewModel = getViewModel()) {
                                 ) {
                                     Slider(
                                         modifier = Modifier.requiredWidth(200.dp),
-                                        value = temperature.value,
+                                        value = screenState.temperature,
                                         onValueChange = {
-                                            viewModel.onChangeTemperature(it)
+                                            viewModel.onSendIntent(
+                                                MainScreenIntent.ChangeTemperature(
+                                                    it
+                                                )
+                                            )
                                         },
                                         colors = SliderDefaults.colors(
                                             thumbColor = Color.Blue,
                                             activeTrackColor = Color.Blue
                                         ),
                                         onValueChangeFinished = {
-                                            viewModel.onSaveTemperature(temperature.value)
+                                            viewModel.onSendIntent(MainScreenIntent.SaveTemperature)
                                         },
                                         valueRange = 5f..65f
                                     )
@@ -231,7 +230,7 @@ fun MainScreen(viewModel: MainViewModel = getViewModel()) {
 
                                     Text(
                                         modifier = Modifier.requiredWidth(80.dp),
-                                        text = "${temperature.value.round(decimals = 1)}℃",
+                                        text = "${screenState.temperature.round(decimals = 1)}℃",
                                         fontSize = MaterialTheme.typography.h5.fontSize,
                                         fontWeight = FontWeight.SemiBold,
                                     )
@@ -268,11 +267,13 @@ fun MainScreen(viewModel: MainViewModel = getViewModel()) {
                                         WaterColor.Blue
                                     ),
                                     onChangeColor = { color ->
-                                        viewModel.onChangeWaterColor(
-                                            color
+                                        viewModel.onSendIntent(
+                                            MainScreenIntent.ChangeWaterColor(
+                                                color
+                                            )
                                         )
                                     },
-                                    selectedButton = selectedColor,
+                                    selectedButton = screenState.waterColor,
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                     contentPaddingValues = PaddingValues(30.dp),
@@ -289,7 +290,7 @@ fun MainScreen(viewModel: MainViewModel = getViewModel()) {
                         strokeWidth = 5.dp
                     )
                 }
-                viewModel.onUpdateState()
+                viewModel.onSendIntent(MainScreenIntent.UpdateState)
             }
         }
     }
